@@ -93,12 +93,12 @@ Aplikasi monitoring detak jantung janin (Fetal BPM) berbasis Flutter, terintegra
 Jika belum punya git, install dulu [Git](https://git-scm.com/downloads).
 
 ```bash
-git clone https://github.com/freeluncher/dopply_app.git
-cd dopply_app
+git clone https://github.com/freeluncher/dopply.git
+cd dopply
 ```
 
 ### 2. Install Flutter SDK
-Pastikan sudah install [Flutter](https://docs.flutter.dev/get-started/install) minimal versi 3.7.0.
+Pastikan sudah install [Flutter](https://docs.flutter.dev/get-started/install) minimal versi 3.29.1.
 
 ```bash
 flutter --version

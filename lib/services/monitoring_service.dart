@@ -10,6 +10,7 @@ import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:dopply_app/models/monitoring.dart';
 import 'package:dopply_app/core/storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:dopply_app/core/api_client.dart';
 
 // Monitoring service provider
 final monitoringServiceProvider = Provider<MonitoringService>((ref) {
@@ -108,7 +109,8 @@ class MonitoringService {
     debugPrint('[MonitoringService] fetchMonitoringHistoryFromBackend called');
     final startTime = DateTime.now();
     try {
-      final baseUrl = 'http://192.168.1.40:8000';
+      // Ambil baseUrl dari ApiConfig, hapus /api/v1 jika hanya butuh domain:port
+      final baseUrl = ApiConfig.baseUrl.replaceAll('/api/v1', '');
       debugPrint('[MonitoringService] Fetching token and user from storage...');
       final token = await StorageService.getToken();
       debugPrint('[MonitoringService] JWT token: $token');
@@ -130,7 +132,9 @@ class MonitoringService {
       final uri = Uri.parse(
         '$baseUrl/api/v1/monitoring/history',
       ).replace(queryParameters: queryParams);
-      debugPrint('[MonitoringService] Requesting: ${uri.toString()}');
+      debugPrint(
+        '[MonitoringService] Requesting: [38;5;10m${uri.toString()}[0m',
+      );
       debugPrint('[MonitoringService] Preparing http request...');
       try {
         final response = await http.get(

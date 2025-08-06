@@ -5,7 +5,7 @@
 import 'package:dio/dio.dart';
 
 class ApiConfig {
-  static const String baseUrl = 'http://192.168.1.40:8000/api/v1';
+  static const String baseUrl = 'http://192.168.193.44:8000/api/v1';
   static const Map<String, String> headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

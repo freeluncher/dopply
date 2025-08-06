@@ -37,10 +37,29 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
     try {
       final userJson = await StorageService.getUserData();
       if (userJson != null && userJson.isNotEmpty) {
-        final userMap = jsonDecode(userJson);
+        try {
+          final decoded = jsonDecode(userJson);
+          if (decoded is Map<String, dynamic>) {
+            final userMap = decoded;
+            setState(() {
+              _patientPhotoUrl = userMap['photo_url'];
+              _patientName = userMap['name'];
+              _isLoadingProfile = false;
+            });
+          } else {
+            print('[PatientDashboard] Invalid user data format in storage');
+            setState(() {
+              _isLoadingProfile = false;
+            });
+          }
+        } catch (e) {
+          print('[PatientDashboard] Error parsing user data: $e');
+          setState(() {
+            _isLoadingProfile = false;
+          });
+        }
+      } else {
         setState(() {
-          _patientPhotoUrl = userMap['photo_url'];
-          _patientName = userMap['name'];
           _isLoadingProfile = false;
         });
       }
@@ -410,7 +429,13 @@ class _PatientDashboardState extends ConsumerState<PatientDashboard> {
           subtitle: 'Ubah data diri\n& catatan medis',
           color: Colors.purple,
           isAvailable: true,
-          onTap: () => context.go('/edit_profile'),
+          onTap: () async {
+            final result = await context.push('/edit_profile');
+            // If edit was successful, refresh the profile data
+            if (result == true) {
+              _loadPatientProfile();
+            }
+          },
         ),
       ],
     );

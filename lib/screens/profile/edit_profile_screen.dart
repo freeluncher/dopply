@@ -61,9 +61,16 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       final userJson = await StorageService.getUserData();
 
       if (userJson != null && userJson.isNotEmpty) {
-        final userMap = jsonDecode(userJson);
+        final decoded = jsonDecode(userJson);
 
-        // Ambil patient_id dari JWT/storage
+        // Pastikan decoded adalah Map
+        if (decoded is! Map<String, dynamic>) {
+          throw Exception('Invalid user data format in storage');
+        }
+
+        final userMap = decoded;
+
+        // Ambil patient_id dari JWT/storage dengan null-safe access
         patientId = userMap['patient_id'] ?? userMap['id'];
         userId = userMap['user_id'] ?? userMap['id'];
 
@@ -250,8 +257,41 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
       final respJson = jsonDecode(response.body);
       if (response.statusCode == 200 && respJson['status'] == 'success') {
-        // Update local storage
-        await StorageService.saveUserData(jsonEncode(respJson['data']));
+        // Get current user data from storage to preserve fields not updated
+        final currentUserJson = await StorageService.getUserData();
+        Map<String, dynamic> currentUserMap = {};
+
+        if (currentUserJson != null && currentUserJson.isNotEmpty) {
+          try {
+            final decoded = jsonDecode(currentUserJson);
+            if (decoded is Map<String, dynamic>) {
+              currentUserMap = decoded;
+            }
+          } catch (e) {
+            print('[EditProfile] Error parsing current user data: $e');
+            // Continue with empty map if parsing fails
+          }
+        }
+
+        // Ensure respJson['data'] is also a valid Map
+        Map<String, dynamic> responseData = {};
+        if (respJson['data'] is Map<String, dynamic>) {
+          responseData = respJson['data'];
+        }
+
+        // Merge updated data with current user data to preserve JWT fields
+        final updatedUserData = {
+          ...currentUserMap, // Keep existing fields like patient_id, photo_url from JWT, etc.
+          ...responseData, // Override with new data from backend
+          // Ensure essential fields are preserved
+          'patient_id': patientId,
+          'user_id': userId,
+          'photo_url': _currentPhotoUrl,
+        };
+
+        // Update local storage with merged data
+        await StorageService.saveUserData(jsonEncode(updatedUserData));
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -263,12 +303,18 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               ),
             ),
           );
-          // Redirect to dashboard according to role
-          final role = await StorageService.getUserRole();
-          if (role == 'doctor') {
-            context.go('/doctor_dashboard');
+
+          // Pop with result true to trigger refresh in previous screen
+          if (Navigator.of(context).canPop()) {
+            Navigator.of(context).pop(true);
           } else {
-            context.go('/patient');
+            // Fallback: redirect to dashboard according to role
+            final role = await StorageService.getUserRole();
+            if (role == 'doctor') {
+              context.go('/doctor_dashboard');
+            } else {
+              context.go('/patient');
+            }
           }
         }
       } else {
